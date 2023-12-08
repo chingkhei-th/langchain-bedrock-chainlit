@@ -2,10 +2,10 @@ import boto3
 from langchain.prompts import PromptTemplate 
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
+from langchain.chains import RetrievalQA
 from langchain.llms.bedrock import Bedrock
 import chainlit as cl
 from prompt_template import get_template
-
 
 @cl.on_chat_start
 async def main():
@@ -50,14 +50,34 @@ async def main():
     cl.user_session.set("llm_chain", conversation)
 
 @cl.on_message
-async def main(message: cl.Message):
-    # Retrieve the chain from the user session
-    conversation = cl.user_session.get("llm_chain") 
+async def on_message(message: cl.Message):
+    if message.elements:
+        file = message.elements
 
-    # Call the chain asynchronously
-    res = await conversation.acall(
-        message.content, 
-        callbacks=[cl.AsyncLangchainCallbackHandler()]
-    )
-    
-    await cl.Message(content=res["response"]).send()
+        message = cl.Message(content=f"Processing `{file[0].name}`...")
+        await message.send()
+
+        # Decode the file----------------------
+        text = file[0].content.decode("utf-8")
+
+        # Retrieve the chain from the user session
+        conversation = cl.user_session.get("llm_chain")
+
+        # Call the chain asynchronously
+        res = await conversation.acall(
+            text,
+            callbacks=[cl.AsyncLangchainCallbackHandler()]
+        )
+
+        await cl.Message(content=res["response"]).send()
+        
+    else:
+        # Retrieve the chain from the user session
+        conversation = cl.user_session.get("llm_chain") 
+        # Call the chain asynchronously
+        res = await conversation.acall(
+            message.content,
+            callbacks=[cl.AsyncLangchainCallbackHandler()]
+        )
+
+        await cl.Message(content=res["response"]).send()
