@@ -2,13 +2,14 @@ import boto3
 from langchain.prompts import PromptTemplate 
 from langchain.chains import ConversationChain
 from langchain.memory import ConversationBufferMemory
-from langchain.chains import RetrievalQA
 from langchain.llms.bedrock import Bedrock
 import chainlit as cl
 from prompt_template import get_template
 
 @cl.on_chat_start
 async def main():
+    
+    # Setting up bedrock client
     bedrock = boto3.client('bedrock-runtime', region_name='us-west-2')
     inference_modifier = {
         "max_tokens_to_sample": 1000,
